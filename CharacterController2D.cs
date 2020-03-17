@@ -26,8 +26,13 @@ public class CharacterController2D : MonoBehaviour
     private bool canDoubleJump = true; // becomes false after a double jump. Becomes true once player lands on ground again
 
     private int airDashCount = 0; // increments everytime player dashes in mid air, resets after landing on ground again
+    private int groundDashCount = 0; // increments everytime player dashes on ground, doesn't reset
 
     private const int maxAirDashes = 2; // airDashCount cannot exceed this constant
+
+    private float dashCooldown = 0.5f; // the cooldown time between each ground dash. gets added to nextDashTime after every 2 ground dashes
+
+    private float nextDashTime = 0f; // the current time must be greater than or equal to this in order to ground dash
 
     private void Awake()
     {
@@ -68,17 +73,18 @@ public class CharacterController2D : MonoBehaviour
             {
                 targetVelocity = new Vector2(move * 10f, rigidBody.velocity.y);
             }
-            else if (isGrounded || airDashCount < maxAirDashes)
+            else if ((isGrounded && Time.time >= nextDashTime) || (!isGrounded && airDashCount < maxAirDashes))
             {
-                if (isFacingRight)
-                {
-                    targetVelocity = new Vector2(dashDistance, rigidBody.velocity.y);
+                targetVelocity = Dash();
+                if(!isGrounded && airDashCount < maxAirDashes) {
+                    airDashCount++;
+                } else if(isGrounded && Time.time >= nextDashTime) {
+                    groundDashCount++;
+                    // check if 2 dashes have occurred and puts the cooldown
+                    if(groundDashCount%2 == 0) {
+                        nextDashTime = Time.time + dashCooldown; 
+                    }
                 }
-                else
-                {
-                    targetVelocity = new Vector2(-1 * dashDistance, rigidBody.velocity.y);
-                }
-                airDashCount++;
             }
 
             // And then smoothing it out and applying it to the character
@@ -121,6 +127,20 @@ public class CharacterController2D : MonoBehaviour
         Vector3 theScale = transform.localScale;
         theScale.x *= -1;
         transform.localScale = theScale;
+    }
+
+    private Vector3 Dash()
+    {
+        Vector3 vector = Vector2.zero;
+        if (isFacingRight)
+        {
+            vector = new Vector2(dashDistance, rigidBody.velocity.y);
+        }
+        else
+        {
+            vector = new Vector2(-1 * dashDistance, rigidBody.velocity.y);
+        }
+        return vector;
     }
 
     // Activates once the player lands on the ground
