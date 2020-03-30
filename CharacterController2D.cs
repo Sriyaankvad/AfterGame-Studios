@@ -13,7 +13,7 @@ public class CharacterController2D : MonoBehaviour
     [SerializeField] private Transform GroundCheck;                           // A position marking where to check if the player is grounded
 
     const float GroundedRadius = .2f; // Radius of the overlap circle to determine if grounded
-    private bool isGrounded;            // Whether or not the player is grounded.
+    private bool isGrounded = true;            // Whether or not the player is grounded.
     private Rigidbody2D rigidBody;
     private bool isFacingRight = true;  // true if facing right, false if facing left
     private Vector3 velocity = Vector3.zero;
@@ -27,6 +27,8 @@ public class CharacterController2D : MonoBehaviour
 
     private int airDashCount = 0; // increments everytime player dashes in mid air, resets after landing on ground again
     private int groundDashCount = 0; // increments everytime player dashes on ground, doesn't reset
+
+    private bool canDash = true;
 
     private const int maxAirDashes = 2; // airDashCount cannot exceed this constant
 
@@ -46,6 +48,7 @@ public class CharacterController2D : MonoBehaviour
     {
         bool wasGrounded = isGrounded;
         isGrounded = false;
+        canDash = ((isGrounded && Time.time >= nextDashTime) || (!isGrounded && airDashCount < maxAirDashes));
 
         // The player is grounded if a circlecast to the groundcheck position hits anything designated as ground
         // This can be done using layers instead but Sample Assets will not overwrite your project settings.
@@ -73,7 +76,7 @@ public class CharacterController2D : MonoBehaviour
             {
                 targetVelocity = new Vector2(move * 10f, rigidBody.velocity.y);
             }
-            else if ((isGrounded && Time.time >= nextDashTime) || (!isGrounded && airDashCount < maxAirDashes))
+            else if (canDash)
             {
                 targetVelocity = Dash();
                 if(!isGrounded && airDashCount < maxAirDashes) {
@@ -149,4 +152,11 @@ public class CharacterController2D : MonoBehaviour
         canDoubleJump = true;
         airDashCount = 0;
     }
+
+    // returns whether player is grounded
+    public bool grounded() { return isGrounded; }
+
+    // returns whether the player can dash
+    public bool CanDash() { return canDash; }
+
 }
