@@ -19,17 +19,19 @@ public class Enemy : MonoBehaviour
     {
 
         currentHealth -= damage;
-        rigidbody.AddForce(knockback);
+        rigidbody.AddRelativeForce(knockback);
         
         if(currentHealth <= 0)
         {
 
-            print("Enemy died");
+            print(this.name + " died");
             Destroy(GetComponent<Rigidbody2D>());
             Destroy(gameObject);
 
         }
 
     }
+
+    public Vector2 getCurrentVelocity() { return rigidbody.velocity; }
 
 }

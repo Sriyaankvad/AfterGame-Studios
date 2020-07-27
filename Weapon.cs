@@ -1,56 +1,79 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 public class Weapon : MonoBehaviour
 {
 
-    public string[] attackNames = new string[12]; // names of attacks, can use for debug or weapon flavoring
+    public string[] attackNames = new string[16];
 
-    public Transform attackPoint; // where the attack is generated
-    public float[] attackRadius; // reach of each attack
-    public float[] attackDamage = new float[12]; // how much damage each attack does
-    public float[] attackSpeed = new float[12]; // how much time player has to wait before attacking again for each attack
-    public bool[] attackFreezesPlayer = new bool[12]; // if each attack freezes the player in place
-    public bool[] attackFreezesEnemy = new bool[12]; // if each attack freezes the enemy in place
-    public Vector2[] knockback = new Vector2[12]; // enemy knockback for each attack
+    public Transform attackPoint;
+    public float[] attackRadius;
+    public float[] attackDamage = new float[16];
+    public float[] attackSpeed = new float[16];
+    public Vector2[] knockback = new Vector2[16];
+    public bool[] freezesEnemy = new bool[16];
+    public float knockbackMultiplier;
     public LayerMask Enemy;
+    public float attackStartDelay;
+    public float attackFinishDelay;
+    public bool attackInProgress = false;
+    public bool multihitAttackInProgress = false;
+    int forwardGroundedCounter = 0;
+    int forwardAerialCounter = 0;
 
-    public Rigidbody2D rigidbody; // player rigidbody
-
-    public float Attack(float attackIndex)
+    public void Attack(float attackIndex)
     {
-
-        print("Executed " + attackNames[(int)attackIndex]); // debug
-
-        if (attackFreezesPlayer[(int)attackIndex])
+        float attackToExecute = attackIndex;
+        if(attackIndex == 0)
         {
-
-            rigidbody.velocity = new Vector2(0, 1);
-
+            multihitAttackInProgress = (forwardGroundedCounter != 2);
+            attackToExecute += forwardGroundedCounter;
+            forwardGroundedCounter = (forwardGroundedCounter + 1) % 3;
+        } else if(attackIndex == 8)
+        {
+            multihitAttackInProgress = (forwardAerialCounter != 2);
+            attackToExecute += forwardAerialCounter;
+            forwardAerialCounter = (forwardAerialCounter + 1) % 3;
+        } else
+        {
+            forwardGroundedCounter = 0;
+            forwardAerialCounter = 0;
         }
 
-        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRadius[(int)attackIndex], Enemy); // generates a circle w/ center attackPoint and radius attackRadius as a hitbox
-
-        //runs through each hit enemy and assigns knockback
-        foreach(Collider2D enemy in hitEnemies)
+        if(!attackInProgress)
         {
+            StartCoroutine(ExecuteDelayedAttack(attackToExecute, attackStartDelay, multihitAttackInProgress ? 0 : attackFinishDelay));
+            print("Executed " + attackNames[(int)attackToExecute]);
+        }
 
-            Vector2 kb = knockback[(int)attackIndex];
-            // if the attack freezes the enemy, sets the enemy's vel to (0,1)
-            if (attackFreezesEnemy[(int)attackIndex])
+    }
+
+    public IEnumerator ExecuteDelayedAttack(float attackIndex, float aSD, float aFD)
+    {
+        attackInProgress = true;
+        yield return new WaitForSeconds(aSD / 1000);
+        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRadius[(int)attackIndex], Enemy);
+
+        foreach (Collider2D enemy in hitEnemies)
+        {
+            if (freezesEnemy[(int)attackIndex])
             {
-
-                enemy.gameObject.GetComponent<Rigidbody2D>().velocity = new Vector2(0, 1);
-
+                enemy.gameObject.GetComponent<Enemy>().ApplyDamage((attackDamage[(int)attackIndex]), new Vector2(0, 0));
+                enemy.gameObject.GetComponent<Enemy>().GetComponent<Rigidbody2D>().velocity = new Vector2(0, 5);
             }
-            enemy.gameObject.GetComponent<Enemy>().ApplyDamage(attackDamage[(int) attackIndex], knockback[(int)attackIndex]);
-            print("Hit " + enemy.name); // debug
-
+            else
+            {
+                enemy.gameObject.GetComponent<Enemy>().ApplyDamage(attackDamage[(int)attackIndex], knockback[(int)attackIndex] * knockbackMultiplier);
+            }
+            print("Hit " + enemy.name);
         }
 
-        return attackSpeed[(int)attackIndex];
-
+        yield return new WaitForSeconds(aFD / 1000);
+        attackInProgress = false;
+        yield return null;
     }
 
 }

@@ -6,7 +6,7 @@ public class PlayerMovement : MonoBehaviour
 {
 
     public CharacterController2D player; // the controller
-    public Weapon weapon; // player's weapon
+    public Weapon weapon;
 
     public float runSpeed = 40f;  // speed of the player
 
@@ -17,15 +17,14 @@ public class PlayerMovement : MonoBehaviour
     bool attack = false; // stores whether the player wants to attack or not
 
     float attackIndex = 0; // which attack the player does
-    float nextAttackTime = 0f;
 
     public float dashAttackWindow = 5; // # of frames player has to both input a dash and an attack
     bool[] wasDashing;
-    bool canDashAttack = true;
 
     private void Start()
     {
         wasDashing = new bool[(int)dashAttackWindow];
+        Physics2D.IgnoreLayerCollision(10, 9, true);
     }
 
     // Update is called once per frame
@@ -51,18 +50,16 @@ public class PlayerMovement : MonoBehaviour
 
             attack = true;
             if (player.grounded()) {
-                if (dashedInWindow() && player.CanDash() && canDashAttack) {
-                    attackIndex = 3;
-                    canDashAttack = false;
+                if (DashedInWindow() && player.canDash()) {
+                    attackIndex = 5;
                 } else {
                     attackIndex = 0;
                 }
             } else {
-                if (dashedInWindow() && player.CanDash() && canDashAttack) {
-                    attackIndex = 9;
-                    canDashAttack = false;
+                if (DashedInWindow() && player.canDash()) {
+                    attackIndex = 13;
                 } else {
-                    attackIndex = 6;
+                    attackIndex = 8;
                 }
             }
 
@@ -74,26 +71,24 @@ public class PlayerMovement : MonoBehaviour
             attack = true;
             if (player.grounded())
             {
-                if (dashedInWindow() && player.CanDash() && canDashAttack)
+                if (DashedInWindow() && player.canDash())
                 {
-                    attackIndex = 4;
-                    canDashAttack = false;
+                    attackIndex = 6;
                 }
                 else
                 {
-                    attackIndex = 1;
+                    attackIndex = 3;
                 }
             }
             else
             {
-                if (dashedInWindow() && player.CanDash() && canDashAttack)
+                if (DashedInWindow() && player.canDash())
                 {
-                    attackIndex = 10;
-                    canDashAttack = false;
+                    attackIndex = 14;
                 }
                 else
                 {
-                    attackIndex = 7;
+                    attackIndex = 11;
                 }
             }
 
@@ -105,26 +100,24 @@ public class PlayerMovement : MonoBehaviour
             attack = true;
             if (player.grounded())
             {
-                if (dashedInWindow() && player.CanDash() && canDashAttack)
+                if (DashedInWindow() && player.canDash())
                 {
-                    attackIndex = 5;
-                    canDashAttack = false;
+                    attackIndex = 7;
                 }
                 else
                 {
-                    attackIndex = 2;
+                    attackIndex = 4;
                 }
             }
             else
             {
-                if (dashedInWindow() && player.CanDash() && canDashAttack)
+                if (DashedInWindow() && player.canDash())
                 {
-                    attackIndex = 11;
-                    canDashAttack = false;
+                    attackIndex = 15;
                 }
                 else
                 {
-                    attackIndex = 8;
+                    attackIndex = 12;
                 }
             }
 
@@ -132,28 +125,23 @@ public class PlayerMovement : MonoBehaviour
 
     }
 
-    // called everytime the OnLandEvent occurs
-    public void OnLand()
+        // called everytime the OnLandEvent occurs
+        public void OnLand()
     {
         player.Land();
-        canDashAttack = true;
     }
 
     void FixedUpdate()
     {
-        updateDashingWindow();
+        UpdateDashingWindow();
         player.Move(horizontalMove * Time.fixedDeltaTime, jump, dash);
-
-        // if the player inputs an attack & can attack again
-        if(attack && Time.time >= nextAttackTime)
+        if(attack)
         {
-            nextAttackTime = Time.time + (1f / weapon.Attack(attackIndex)); // set next attack time to current time + (1 / attack speed)
+            weapon.Attack(attackIndex);
         }
-
         jump = false;
         dash = false;
         attack = false;
-
     }
 
     public void ApplyDamage(float damage)
@@ -163,8 +151,7 @@ public class PlayerMovement : MonoBehaviour
 
     }
 
-    // checks if the player dashed in the dashing window
-    public bool dashedInWindow()
+    public bool DashedInWindow()
     {
 
         foreach(bool dashed in wasDashing)
@@ -175,8 +162,7 @@ public class PlayerMovement : MonoBehaviour
 
     }
 
-    // shifts data one cell to the left, and sets the last cell's value to the current dash value
-    public void updateDashingWindow()
+    public void UpdateDashingWindow()
     {
 
         for(int i = 0; i < wasDashing.Length - 1; i++)
