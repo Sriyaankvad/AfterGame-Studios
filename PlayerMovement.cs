@@ -24,7 +24,9 @@ public class PlayerMovement : MonoBehaviour
     private void Start()
     {
         wasDashing = new bool[(int)dashAttackWindow];
-        Physics2D.IgnoreLayerCollision(10, 9, true);
+        Physics2D.IgnoreLayerCollision(10, 9, true); // prevents rigidbody collisions between enemies and players
+        Physics2D.IgnoreLayerCollision(9, 9, true); // prevents rigidbody collisions between enemies
+        weapon.LoadWeaponFromJson("BeamKatanaData.json"); // loads Beam Katana as default weapon
     }
 
     // Update is called once per frame
@@ -121,6 +123,16 @@ public class PlayerMovement : MonoBehaviour
                 }
             }
 
+        }
+
+        if (Input.GetButtonDown("Weapon1"))
+        {
+            weapon.LoadWeaponFromJson("BeamKatanaData.json");
+        }
+
+        if (Input.GetButtonDown("Weapon2"))
+        {
+            weapon.LoadWeaponFromJson("BattleAxeData.json");
         }
 
     }
